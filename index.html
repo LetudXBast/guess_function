@@ -323,12 +323,14 @@
             }
         });
 
-        // Generate random function (same as before)
+        // Remplacez la fonction generateRandomFunction existante par celle-ci
         function generateRandomFunction() {
             const functionTypes = [
                 "lineaire",
-                "sinus",
-                "cosinus",
+                "sinus_simple",
+                "cosinus_simple",
+                "sinus_complexe",
+                "cosinus_complexe",
                 "puissance",
                 "parabole"
             ];
@@ -339,20 +341,38 @@
             switch(type) {
                 case "lineaire": {
                     // f(x) = ax + b, avec a non nul
-                    const a = Math.floor(Math.random() * 5) - 2;
+                    let a = Math.floor(Math.random() * 5) - 2;
                     const slope = (a === 0 ? 1 : a);
                     const b = Math.floor(Math.random() * 5) - 2;
                     func = `${slope}*x ${b >= 0 ? "+ " + b : "- " + Math.abs(b)}`;
                     break;
                 }
-                case "sinus":
+                case "sinus_simple":
                     // f(x) = sin(x)
                     func = "sin(x)";
                     break;
-                case "cosinus":
+                case "cosinus_simple":
                     // f(x) = cos(x)
                     func = "cos(x)";
                     break;
+                case "sinus_complexe": {
+                    // f(x) = A*sin(b*x) + C
+                    let A = Math.floor(Math.random() * 9) - 4;
+                    if (A === 0) A = 1;
+                    let b = Math.floor(Math.random() * 5) + 1;
+                    let C = Math.floor(Math.random() * 7) - 3;
+                    func = `${A}*sin(${b}*x) ${C >= 0 ? "+ " + C : "- " + Math.abs(C)}`;
+                    break;
+                }
+                case "cosinus_complexe": {
+                    // f(x) = A*cos(b*x) + C
+                    let A = Math.floor(Math.random() * 9) - 4;
+                    if (A === 0) A = 1;
+                    let b = Math.floor(Math.random() * 5) + 1;
+                    let C = Math.floor(Math.random() * 7) - 3;
+                    func = `${A}*cos(${b}*x) ${C >= 0 ? "+ " + C : "- " + Math.abs(C)}`;
+                    break;
+                }
                 case "puissance": {
                     // f(x) = x^n avec n=2 ou 3
                     const n = Math.random() < 0.5 ? 2 : 3;
@@ -361,7 +381,7 @@
                 }
                 case "parabole": {
                     // f(x) = ax^2 + bx + c, avec a non nul
-                    const a = Math.floor(Math.random() * 5) - 2;
+                    let a = Math.floor(Math.random() * 5) - 2;
                     const aCoef = (a === 0 ? 1 : a);
                     const bCoef = Math.floor(Math.random() * 5) - 2;
                     const cCoef = Math.floor(Math.random() * 5) - 2;
@@ -446,6 +466,11 @@
 
         // Check user's guess (same as before)
         function checkGuess(userInput) {
+            // Prétraitement pour insérer les '*' manquants, par exemple : 4sin(2x) -> 4*sin(2*x)
+            userInput = userInput
+                .replace(/(\d)([a-zA-Z(])/g, '$1*$2')
+                .replace(/([a-zA-Z)])(\d)/g, '$1*$2');
+            
             gameState.attempts++;
             gameState.totalAttempts++;
             updateAttemptsCounter();
