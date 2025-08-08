@@ -1,0 +1,513 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <base target="_self">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Devine la Fonction - Version Interactive</title>
+    <meta name="description" content="Application éducative interactive pour deviner les fonctions mathématiques">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@1.2.1"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/11.6.0/math.js"></script>
+    <style>
+        .function-input {
+            font-family: monospace;
+            font-size: 1.2rem;
+        }
+        .range-slider {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: #d1d5db;
+            outline: none;
+        }
+        .range-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="min-h-screen bg-gray-50">
+    <header class="bg-blue-600 text-white shadow-md">
+        <div class="container mx-auto px-4 py-6">
+            <h1 class="text-3xl font-bold">Devine la Fonction - Version Interactive</h1>
+            <p class="mt-2">Explorez les fonctions mathématiques avec des outils avancés</p>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <!-- Graph Section -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold text-blue-700">Courbe interactive</h2>
+                    <div class="flex space-x-2">
+                        <button id="resetZoomBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 rounded text-sm">
+                            Réinitialiser
+                        </button>
+                        <button id="zoomInBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 rounded text-sm">
+                            <i class="fas fa-search-plus"></i>
+                        </button>
+                        <button id="zoomOutBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-800 px-3 py-1 rounded text-sm">
+                            <i class="fas fa-search-minus"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="h-80">
+                    <canvas id="functionChart"></canvas>
+                </div>
+                
+                <!-- Range Controls -->
+                <div class="mt-6 space-y-4">
+                    <div>
+                        <label for="xMin" class="block text-sm font-medium text-gray-700 mb-1">Axe X min:</label>
+                        <input type="range" id="xMin" class="range-slider" min="-20" max="0" step="1" value="-10">
+                        <span id="xMinValue" class="text-sm text-gray-600">-10</span>
+                    </div>
+                    <div>
+                        <label for="xMax" class="block text-sm font-medium text-gray-700 mb-1">Axe X max:</label>
+                        <input type="range" id="xMax" class="range-slider" min="0" max="20" step="1" value="10">
+                        <span id="xMaxValue" class="text-sm text-gray-600">10</span>
+                    </div>
+                    <div>
+                        <label for="yMin" class="block text-sm font-medium text-gray-700 mb-1">Axe Y min:</label>
+                        <input type="range" id="yMin" class="range-slider" min="-20" max="0" step="1" value="-10">
+                        <span id="yMinValue" class="text-sm text-gray-600">-10</span>
+                    </div>
+                    <div>
+                        <label for="yMax" class="block text-sm font-medium text-gray-700 mb-1">Axe Y max:</label>
+                        <input type="range" id="yMax" class="range-slider" min="0" max="20" step="1" value="10">
+                        <span id="yMaxValue" class="text-sm text-gray-600">10</span>
+                    </div>
+                </div>
+                
+                <div class="mt-4 flex justify-between items-center">
+                    <button id="newFunctionBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+                        Nouvelle fonction
+                    </button>
+                    <span id="attemptsCounter" class="text-gray-600">Tentatives: 0</span>
+                </div>
+            </div>
+
+            <!-- Game Section -->
+            <div class="bg-white p-6 rounded-lg shadow-md">
+                <h2 class="text-xl font-semibold mb-4 text-blue-700">Votre proposition</h2>
+                
+                <div class="mb-6">
+                    <label for="functionInput" class="block text-sm font-medium text-gray-700 mb-2">
+                        Entrez une fonction de x (ex: x^2, sin(x), log(x), etc.)
+                    </label>
+                    <div class="flex">
+                        <span class="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500">
+                            f(x) =
+                        </span>
+                        <input 
+                            type="text" 
+                            id="functionInput" 
+                            class="function-input flex-1 min-w-0 block w-full px-3 py-2 rounded-none rounded-r-md border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="x^2 + 3*x - 2"
+                        >
+                    </div>
+                </div>
+
+                <button id="submitGuessBtn" class="w-full bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded mb-4">
+                    Valider
+                </button>
+
+                <div id="feedback" class="hidden p-4 rounded bg-yellow-50 border border-yellow-200 mb-4">
+                    <p id="feedbackText"></p>
+                </div>
+
+                <div class="mt-6">
+                    <h3 class="font-medium text-gray-800 mb-2">Commandes interactives:</h3>
+                    <ul class="list-disc pl-5 space-y-1 text-gray-600">
+                        <li><strong>Zoom:</strong> Molette souris ou boutons +/-</li>
+                        <li><strong>Déplacement:</strong> Clic gauche + glisser</li>
+                        <li><strong>Réinitialiser:</strong> Double-clic ou bouton</li>
+                        <li><strong>Curseurs:</strong> Ajustez les axes X et Y</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Score Section -->
+        <div class="mt-8 bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-semibold mb-4 text-blue-700">Vos statistiques</h2>
+            <div class="grid grid-cols-3 gap-4 text-center">
+                <div class="p-4 bg-blue-50 rounded-lg">
+                    <p class="text-sm text-blue-600">Fonctions trouvées</p>
+                    <p id="correctCount" class="text-2xl font-bold">0</p>
+                </div>
+                <div class="p-4 bg-blue-50 rounded-lg">
+                    <p class="text-sm text-blue-600">Tentatives moyennes</p>
+                    <p id="avgAttempts" class="text-2xl font-bold">0</p>
+                </div>
+                <div class="p-4 bg-blue-50 rounded-lg">
+                    <p class="text-sm text-blue-600">Score</p>
+                    <p id="score" class="text-2xl font-bold">0</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-gray-100 mt-12 py-6">
+        <div class="container mx-auto px-4 text-center text-gray-600">
+            <p>Application éducative interactive pour les élèves de fin lycée / début université</p>
+            <p class="mt-2">© 2023 Devine la Fonction - Version Interactive</p>
+        </div>
+    </footer>
+
+    <script>
+        // Game state
+        const gameState = {
+            currentFunction: "",
+            attempts: 0,
+            correctAnswers: 0,
+            totalAttempts: 0,
+            score: 0,
+            xRange: [-10, 10],
+            yRange: [-10, 10]
+        };
+
+        // Chart setup with zoom/pan plugins
+        const ctx = document.getElementById('functionChart').getContext('2d');
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                datasets: [{
+                    label: 'Fonction à deviner',
+                    borderColor: 'rgb(59, 130, 246)',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    tension: 0.1,
+                    fill: false
+                }, {
+                    label: 'Votre proposition',
+                    borderColor: 'rgb(16, 185, 129)',
+                    borderWidth: 2,
+                    pointRadius: 0,
+                    tension: 0.1,
+                    fill: false
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: {
+                        type: 'linear',
+                        position: 'center',
+                        title: {
+                            display: true,
+                            text: 'x'
+                        },
+                        min: gameState.xRange[0],
+                        max: gameState.xRange[1]
+                    },
+                    y: {
+                        type: 'linear',
+                        position: 'center',
+                        title: {
+                            display: true,
+                            text: 'f(x)'
+                        },
+                        min: gameState.yRange[0],
+                        max: gameState.yRange[1]
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    },
+                    zoom: {
+                        zoom: {
+                            wheel: {
+                                enabled: true,
+                            },
+                            pinch: {
+                                enabled: true
+                            },
+                            mode: 'xy',
+                            speed: 0.1
+                        },
+                        pan: {
+                            enabled: true,
+                            mode: 'xy',
+                            speed: 0.1
+                        },
+                        limits: {
+                            x: { min: -50, max: 50 },
+                            y: { min: -50, max: 50 }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Generate random function (same as before)
+        function generateRandomFunction() {
+            const functionTypes = [
+                "polynomial",
+                "trigonometric",
+                "exponential",
+                "logarithmic",
+                "rational"
+            ];
+            
+            const type = functionTypes[Math.floor(Math.random() * functionTypes.length)];
+            let func = "";
+            
+            switch(type) {
+                case "polynomial":
+                    const degree = Math.floor(Math.random() * 3) + 1;
+                    const coeffs = [];
+                    for (let i = 0; i <= degree; i++) {
+                        coeffs.push(Math.floor(Math.random() * 5) - 2);
+                    }
+                    const nonZeroCoeffs = coeffs.filter(c => c !== 0);
+                    func = nonZeroCoeffs.map((c, i) => {
+                        const power = degree - i;
+                        if (power === 0) return c;
+                        if (power === 1) return `${c}*x`;
+                        return `${c}*x^${power}`;
+                    }).join(" + ").replace(/\+\s\-/g, "- ");
+                    break;
+                    
+                case "trigonometric":
+                    const trigFuncs = ["sin", "cos", "tan"];
+                    const trigFunc = trigFuncs[Math.floor(Math.random() * trigFuncs.length)];
+                    const a = Math.floor(Math.random() * 2) + 1;
+                    const b = Math.floor(Math.random() * 3) + 1;
+                    func = `${a}*${trigFunc}(${b}*x)`;
+                    break;
+                    
+                case "exponential":
+                    const base = Math.floor(Math.random() * 3) + 2;
+                    func = `${base}^x`;
+                    break;
+                    
+                case "logarithmic":
+                    const logBase = Math.floor(Math.random() * 3) + 2;
+                    func = `log${logBase}(x)`;
+                    break;
+                    
+                case "rational":
+                    const numDegree = Math.floor(Math.random() * 2) + 1;
+                    const denomDegree = Math.floor(Math.random() * 2) + 1;
+                    const numCoeffs = Array(numDegree + 1).fill(0).map(() => Math.floor(Math.random() * 5) - 2);
+                    const denomCoeffs = Array(denomDegree + 1).fill(0).map(() => Math.floor(Math.random() * 5) - 2);
+                    
+                    const numStr = numCoeffs.map((c, i) => {
+                        const power = numDegree - i;
+                        if (power === 0) return c;
+                        if (power === 1) return `${c}*x`;
+                        return `${c}*x^${power}`;
+                    }).join(" + ").replace(/\+\s\-/g, "- ");
+                    
+                    const denomStr = denomCoeffs.map((c, i) => {
+                        const power = denomDegree - i;
+                        if (power === 0) return c;
+                        if (power === 1) return `${c}*x`;
+                        return `${c}*x^${power}`;
+                    }).join(" + ").replace(/\+\s\-/g, "- ");
+                    
+                    func = `(${numStr})/(${denomStr})`;
+                    break;
+            }
+            
+            gameState.currentFunction = func;
+            gameState.attempts = 0;
+            updateAttemptsCounter();
+            updateChart();
+            resetZoom();
+        }
+
+        // Update chart with current function and range
+        function updateChart(userFunc = null) {
+            const labels = [];
+            const data = [];
+            const userData = [];
+            
+            const step = (gameState.xRange[1] - gameState.xRange[0]) / 100;
+            
+            for (let x = gameState.xRange[0]; x <= gameState.xRange[1]; x += step) {
+                labels.push(x);
+                
+                try {
+                    const scope = { x };
+                    const y = math.evaluate(gameState.currentFunction, scope);
+                    data.push(y);
+                } catch (e) {
+                    data.push(null);
+                }
+                
+                if (userFunc) {
+                    try {
+                        const scope = { x };
+                        const y = math.evaluate(userFunc, scope);
+                        userData.push(y);
+                    } catch (e) {
+                        userData.push(null);
+                    }
+                }
+            }
+            
+            chart.data.labels = labels;
+            chart.data.datasets[0].data = data;
+            chart.data.datasets[1].data = userFunc ? userData : [];
+            
+            // Update axis ranges
+            chart.options.scales.x.min = gameState.xRange[0];
+            chart.options.scales.x.max = gameState.xRange[1];
+            chart.options.scales.y.min = gameState.yRange[0];
+            chart.options.scales.y.max = gameState.yRange[1];
+            
+            chart.update();
+        }
+
+        // Reset zoom and pan
+        function resetZoom() {
+            if (chart.resetZoom) {
+                chart.resetZoom();
+            }
+            gameState.xRange = [-10, 10];
+            gameState.yRange = [-10, 10];
+            updateRangeSliders();
+            updateChart();
+        }
+
+        // Update range slider values
+        function updateRangeSliders() {
+            document.getElementById('xMin').value = gameState.xRange[0];
+            document.getElementById('xMax').value = gameState.xRange[1];
+            document.getElementById('yMin').value = gameState.yRange[0];
+            document.getElementById('yMax').value = gameState.yRange[1];
+            
+            document.getElementById('xMinValue').textContent = gameState.xRange[0];
+            document.getElementById('xMaxValue').textContent = gameState.xRange[1];
+            document.getElementById('yMinValue').textContent = gameState.yRange[0];
+            document.getElementById('yMaxValue').textContent = gameState.yRange[1];
+        }
+
+        // Check user's guess (same as before)
+        function checkGuess(userInput) {
+            gameState.attempts++;
+            gameState.totalAttempts++;
+            updateAttemptsCounter();
+            
+            try {
+                const normalizedTarget = math.simplify(gameState.currentFunction).toString();
+                const normalizedUser = math.simplify(userInput).toString();
+                
+                if (normalizedTarget === normalizedUser) {
+                    gameState.correctAnswers++;
+                    gameState.score += Math.max(1, 5 - gameState.attempts);
+                    updateStats();
+                    
+                    document.getElementById('feedback').classList.remove('hidden');
+                    document.getElementById('feedbackText').textContent = `Bravo ! Vous avez trouvé la fonction: ${gameState.currentFunction}`;
+                    document.getElementById('feedback').className = 'p-4 rounded bg-green-50 border border-green-200 mb-4';
+                    
+                    updateChart(userInput);
+                    document.getElementById('submitGuessBtn').disabled = true;
+                } else {
+                    document.getElementById('feedback').classList.remove('hidden');
+                    document.getElementById('feedbackText').textContent = 'Pas encore ! Essayez à nouveau. Observez les intersections, la croissance et le comportement aux limites.';
+                    document.getElementById('feedback').className = 'p-4 rounded bg-yellow-50 border border-yellow-200 mb-4';
+                    
+                    updateChart(userInput);
+                }
+            } catch (e) {
+                document.getElementById('feedback').classList.remove('hidden');
+                document.getElementById('feedbackText').textContent = 'Erreur de syntaxe dans votre fonction. Vérifiez votre saisie.';
+                document.getElementById('feedback').className = 'p-4 rounded bg-red-50 border border-red-200 mb-4';
+            }
+        }
+
+        // Update UI elements (same as before)
+        function updateAttemptsCounter() {
+            document.getElementById('attemptsCounter').textContent = `Tentatives: ${gameState.attempts}`;
+        }
+
+        function updateStats() {
+            document.getElementById('correctCount').textContent = gameState.correctAnswers;
+            document.getElementById('avgAttempts').textContent = gameState.correctAnswers > 0 
+                ? (gameState.totalAttempts / gameState.correctAnswers).toFixed(1) 
+                : "0";
+            document.getElementById('score').textContent = gameState.score;
+        }
+
+        // Event listeners for new interactive controls
+        document.getElementById('resetZoomBtn').addEventListener('click', resetZoom);
+        document.getElementById('zoomInBtn').addEventListener('click', () => {
+            chart.zoom(1.2);
+        });
+        document.getElementById('zoomOutBtn').addEventListener('click', () => {
+            chart.zoom(0.8);
+        });
+
+        // Range slider event listeners
+        document.getElementById('xMin').addEventListener('input', (e) => {
+            gameState.xRange[0] = parseInt(e.target.value);
+            document.getElementById('xMinValue').textContent = e.target.value;
+            updateChart();
+        });
+        
+        document.getElementById('xMax').addEventListener('input', (e) => {
+            gameState.xRange[1] = parseInt(e.target.value);
+            document.getElementById('xMaxValue').textContent = e.target.value;
+            updateChart();
+        });
+        
+        document.getElementById('yMin').addEventListener('input', (e) => {
+            gameState.yRange[0] = parseInt(e.target.value);
+            document.getElementById('yMinValue').textContent = e.target.value;
+            updateChart();
+        });
+        
+        document.getElementById('yMax').addEventListener('input', (e) => {
+            gameState.yRange[1] = parseInt(e.target.value);
+            document.getElementById('yMaxValue').textContent = e.target.value;
+            updateChart();
+        });
+
+        // Keep existing event listeners
+        document.getElementById('newFunctionBtn').addEventListener('click', () => {
+            generateRandomFunction();
+            document.getElementById('feedback').classList.add('hidden');
+            document.getElementById('functionInput').value = '';
+            document.getElementById('submitGuessBtn').disabled = false;
+        });
+
+        document.getElementById('submitGuessBtn').addEventListener('click', () => {
+            const userInput = document.getElementById('functionInput').value.trim();
+            if (userInput) {
+                checkGuess(userInput);
+            }
+        });
+
+        document.getElementById('functionInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                const userInput = document.getElementById('functionInput').value.trim();
+                if (userInput) {
+                    checkGuess(userInput);
+                }
+            }
+        });
+
+        // Initialize game
+        generateRandomFunction();
+        updateStats();
+        updateRangeSliders();
+    </script>
+</body>
+</html>
