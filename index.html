@@ -178,7 +178,65 @@
             yRange: [-10, 10]
         };
 
-        // Chart setup with zoom/pan plugins
+        // Ajout du plugin pour tracer en gras les axes x=0 et y=0
+        Chart.register({
+            id: 'originLines',
+            afterDraw: (chart, args, options) => {
+                const ctx = chart.ctx;
+                const xScale = chart.scales.x;
+                const yScale = chart.scales.y;
+
+                // Coordonnées en pixels pour les lignes en gras (axe passant par 0)
+                const xZero = xScale.getPixelForValue(0);
+                const yZero = yScale.getPixelForValue(0);
+
+                ctx.save();
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#000';
+
+                // Tracé de la ligne verticale (axe y, x=0)
+                ctx.beginPath();
+                ctx.moveTo(xZero, yScale.top);
+                ctx.lineTo(xZero, yScale.bottom);
+                ctx.stroke();
+
+                // Tracé de la ligne horizontale (axe x, y=0)
+                ctx.beginPath();
+                ctx.moveTo(xScale.left, yZero);
+                ctx.lineTo(xScale.right, yZero);
+                ctx.stroke();
+
+                // Configuration du style pour les labels
+                ctx.font = "bold 14px sans-serif";
+                ctx.fillStyle = "#000";
+                
+                const offset = 5;
+                
+                // Redessiner les tick labels de l'axe des abscisses sur la ligne horizontale (y=0)
+                xScale.ticks.forEach(tick => {
+                    // Position horizontale
+                    const xPos = xScale.getPixelForValue(tick.value);
+                    // Affichage centré, en dessous de la ligne horizontale
+                    ctx.textAlign = "center";
+                    ctx.textBaseline = "top";
+                    ctx.fillText(tick.label, xPos, yZero + offset);
+                });
+                
+                // Redessiner les tick labels de l'axe des ordonnées sur la ligne verticale (x=0)
+                yScale.ticks.forEach(tick => {
+                    // Position verticale
+                    const yPos = yScale.getPixelForValue(tick.value);
+                    // Affichage à droite, à gauche de la ligne verticale
+                    ctx.textAlign = "right";
+                    ctx.textBaseline = "middle";
+                    ctx.fillText(tick.label, xZero - offset, yPos);
+                });
+                
+                ctx.restore();
+            }
+        });
+        
+        // Configuration et instanciation du graphique
         const ctx = document.getElementById('functionChart').getContext('2d');
         const chart = new Chart(ctx, {
             type: 'line',
@@ -207,8 +265,14 @@
                         type: 'linear',
                         position: 'center',
                         title: {
-                            display: true,
-                            text: 'x'
+                            display: false // Désactive le titre "x"
+                        },
+                        ticks: {
+                            display: false
+                        },
+                        grid: {
+                            borderColor: "#000",
+                            borderWidth: 0
                         },
                         min: gameState.xRange[0],
                         max: gameState.xRange[1]
@@ -217,8 +281,14 @@
                         type: 'linear',
                         position: 'center',
                         title: {
-                            display: true,
-                            text: 'f(x)'
+                            display: false // Désactive le titre "f(x)"
+                        },
+                        ticks: {
+                            display: false
+                        },
+                        grid: {
+                            borderColor: "#000",
+                            borderWidth: 0
                         },
                         min: gameState.yRange[0],
                         max: gameState.yRange[1]
