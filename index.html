@@ -326,72 +326,48 @@
         // Generate random function (same as before)
         function generateRandomFunction() {
             const functionTypes = [
-                "polynomial",
-                "trigonometric",
-                "exponential",
-                "logarithmic",
-                "rational"
+                "lineaire",
+                "sinus",
+                "cosinus",
+                "puissance",
+                "parabole"
             ];
             
             const type = functionTypes[Math.floor(Math.random() * functionTypes.length)];
             let func = "";
             
             switch(type) {
-                case "polynomial":
-                    const degree = Math.floor(Math.random() * 3) + 1;
-                    const coeffs = [];
-                    for (let i = 0; i <= degree; i++) {
-                        coeffs.push(Math.floor(Math.random() * 5) - 2);
-                    }
-                    const nonZeroCoeffs = coeffs.filter(c => c !== 0);
-                    func = nonZeroCoeffs.map((c, i) => {
-                        const power = degree - i;
-                        if (power === 0) return c;
-                        if (power === 1) return `${c}*x`;
-                        return `${c}*x^${power}`;
-                    }).join(" + ").replace(/\+\s\-/g, "- ");
+                case "lineaire": {
+                    // f(x) = ax + b, avec a non nul
+                    const a = Math.floor(Math.random() * 5) - 2;
+                    const slope = (a === 0 ? 1 : a);
+                    const b = Math.floor(Math.random() * 5) - 2;
+                    func = `${slope}*x ${b >= 0 ? "+ " + b : "- " + Math.abs(b)}`;
                     break;
-                    
-                case "trigonometric":
-                    const trigFuncs = ["sin", "cos", "tan"];
-                    const trigFunc = trigFuncs[Math.floor(Math.random() * trigFuncs.length)];
-                    const a = Math.floor(Math.random() * 2) + 1;
-                    const b = Math.floor(Math.random() * 3) + 1;
-                    func = `${a}*${trigFunc}(${b}*x)`;
+                }
+                case "sinus":
+                    // f(x) = sin(x)
+                    func = "sin(x)";
                     break;
-                    
-                case "exponential":
-                    const base = Math.floor(Math.random() * 3) + 2;
-                    func = `${base}^x`;
+                case "cosinus":
+                    // f(x) = cos(x)
+                    func = "cos(x)";
                     break;
-                    
-                case "logarithmic":
-                    const logBase = Math.floor(Math.random() * 3) + 2;
-                    func = `log${logBase}(x)`;
+                case "puissance": {
+                    // f(x) = x^n avec n=2 ou 3
+                    const n = Math.random() < 0.5 ? 2 : 3;
+                    func = `x^${n}`;
                     break;
-                    
-                case "rational":
-                    const numDegree = Math.floor(Math.random() * 2) + 1;
-                    const denomDegree = Math.floor(Math.random() * 2) + 1;
-                    const numCoeffs = Array(numDegree + 1).fill(0).map(() => Math.floor(Math.random() * 5) - 2);
-                    const denomCoeffs = Array(denomDegree + 1).fill(0).map(() => Math.floor(Math.random() * 5) - 2);
-                    
-                    const numStr = numCoeffs.map((c, i) => {
-                        const power = numDegree - i;
-                        if (power === 0) return c;
-                        if (power === 1) return `${c}*x`;
-                        return `${c}*x^${power}`;
-                    }).join(" + ").replace(/\+\s\-/g, "- ");
-                    
-                    const denomStr = denomCoeffs.map((c, i) => {
-                        const power = denomDegree - i;
-                        if (power === 0) return c;
-                        if (power === 1) return `${c}*x`;
-                        return `${c}*x^${power}`;
-                    }).join(" + ").replace(/\+\s\-/g, "- ");
-                    
-                    func = `(${numStr})/(${denomStr})`;
+                }
+                case "parabole": {
+                    // f(x) = ax^2 + bx + c, avec a non nul
+                    const a = Math.floor(Math.random() * 5) - 2;
+                    const aCoef = (a === 0 ? 1 : a);
+                    const bCoef = Math.floor(Math.random() * 5) - 2;
+                    const cCoef = Math.floor(Math.random() * 5) - 2;
+                    func = `${aCoef}*x^2 ${bCoef >= 0 ? "+ " + bCoef + "*x" : "- " + Math.abs(bCoef) + "*x"} ${cCoef >= 0 ? "+ " + cCoef : "- " + Math.abs(cCoef)}`;
                     break;
+                }
             }
             
             gameState.currentFunction = func;
